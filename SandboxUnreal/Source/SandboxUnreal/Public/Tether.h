@@ -24,9 +24,14 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	USphereComponent* detector;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TArray<ATether*> tethers;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UBoxComponent* root;
+
+	void GetTethers();
 
 public:	
 	// Called every frame

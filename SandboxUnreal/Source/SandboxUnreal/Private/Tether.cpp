@@ -26,16 +26,27 @@ ATether::ATether()
 void ATether::BeginPlay()
 {
 	Super::BeginPlay();
+}
 
-	TArray<AActor*> actors;
+void ATether::GetTethers()
+{
+	TArray<AActor*> ignore = TArray<AActor*>();
+	TArray<AActor*> found = TArray<AActor*>();
+	for (ATether* tether : tethers)
+	{
+		ignore.Add(tether);
+	}
+
+	ignore.Add(this);
+	
 	UKismetSystemLibrary::SphereOverlapActors(GetWorld(), detector->GetComponentLocation(),
 		detector->GetScaledSphereRadius(), TArray<TEnumAsByte<EObjectTypeQuery>>(), ATether::GetClass(),
-		TArray<AActor*>(), actors);
+		ignore, found);
 	
-	UE_LOG(LogTemp, Display, TEXT("List length: %d"), actors.Num());
-	for (auto actor : actors)
+	for (auto actor : found)
 	{
 		UE_LOG(LogTemp, Display, TEXT("Actor %s"), *actor->GetActorLabel());
+		tethers.Add(Cast<ATether>(actor));
 	}
 }
 
