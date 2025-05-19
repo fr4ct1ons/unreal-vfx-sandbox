@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "TetherConnection.h"
 #include "Components/BoxComponent.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/Actor.h"
@@ -22,14 +23,32 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	USphereComponent* detector;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	double detectionRadius = 600;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USceneComponent* rootSceneComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TArray<ATether*> tethers;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TArray<FTetherConnection> connections;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	ATether* parent;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UBoxComponent* root;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UStaticMesh* tetherMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UMaterial* tetherMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USceneComponent* tetherOrigin;
 
 	void GetTethers();
 
