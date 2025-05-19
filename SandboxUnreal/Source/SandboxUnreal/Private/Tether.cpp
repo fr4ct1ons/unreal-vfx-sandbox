@@ -36,11 +36,13 @@ void ATether::GetTethers()
 {
 	TArray<AActor*> ignore = TArray<AActor*>();
 	TArray<AActor*> found = TArray<AActor*>();
+
+	ignore.Add(this);
+	
 	UKismetSystemLibrary::SphereOverlapActors(GetWorld(), GetActorLocation(),
 		detectionRadius, TArray<TEnumAsByte<EObjectTypeQuery>>(), ATether::GetClass(),
 		ignore, found);
 
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, "Found actors: " + found.Num());
 	
 	for (auto actor : found)
 	{
@@ -50,12 +52,15 @@ void ATether::GetTethers()
 			continue;
 		}
 		
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, "Actor" + actor->GetActorLabel());
 
 		if (!IsValid(tether->parent))
 		{
 
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, "Invalid tether!" + actor->GetActorLabel());
+			if(tether == parent)
+			{
+				continue;
+			}
+			
 			tethers.Add(tether);
 			tether->parent = this;
 
@@ -69,11 +74,19 @@ void ATether::GetTethers()
 			
 			spline->SetStaticMesh(tetherMesh);
 			spline->SetMaterial(0, tetherMaterial);
+
+			FVector startPosition = tetherOrigin->GetRelativeLocation();
+			FVector endPosition = spline->GetComponentTransform().InverseTransformPosition(tether->tetherOrigin->GetComponentLocation());
+			FVector directionNormalized = (endPosition - startPosition);
+			directionNormalized.Normalize();
 			
-			spline->SetStartPosition(tetherOrigin->GetRelativeLocation());
+			spline->SetStartPosition(startPosition);
 			spline->SetStartScale(FVector2d(.1f, .1f));
-			spline->SetEndPosition(GetTransform().InverseTransformPosition(tether->tetherOrigin->GetComponentLocation()));
+			spline->SetStartTangent(directionNormalized * 100);
+			
+			spline->SetEndPosition(endPosition);
 			spline->SetEndScale(FVector2d(.1f, .1f));
+			spline->SetEndTangent(directionNormalized * 100);
 			
 			FTetherConnection* newConnection = new FTetherConnection();
 			newConnection->Spline = spline;
@@ -85,7 +98,7 @@ void ATether::GetTethers()
 		}
 		else
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, "Failed to find actor " + tether->GetActorLabel() + "!");
+
 		}
 	}
 }
