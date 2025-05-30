@@ -43,7 +43,7 @@ void ATether::GetTethers()
 		detectionRadius, TArray<TEnumAsByte<EObjectTypeQuery>>(), ATether::GetClass(),
 		ignore, found);
 
-	
+	ATether* finalTether = nullptr;
 	for (auto actor : found)
 	{
 		TObjectPtr<ATether> tether = Cast<ATether>(actor);
@@ -51,56 +51,76 @@ void ATether::GetTethers()
 		{
 			continue;
 		}
-		
-
-		if (!IsValid(tether->parent))
+		else if(tether == parent)
 		{
+			continue;
+		}
 
-			if(tether == parent)
-			{
-				continue;
-			}
-			
-			tethers.Add(tether);
-			tether->parent = this;
-
-			UActorComponent* splineComponent = AddComponentByClass(USplineMeshComponent::StaticClass(), false, root->GetRelativeTransform(), true);
-			FinishAndRegisterComponent(splineComponent);
-			USplineMeshComponent* spline = Cast<USplineMeshComponent>(splineComponent);
-
-			spline->SetMobility(EComponentMobility::Type::Movable);
-			spline->AttachToComponent(root, FAttachmentTransformRules::KeepRelativeTransform);
-			spline->SetRelativeLocation(FVector(0, 0, 0));
-			
-			spline->SetStaticMesh(tetherMesh);
-			spline->SetMaterial(0, tetherMaterial);
-
-			FVector startPosition = tetherOrigin->GetRelativeLocation();
-			FVector endPosition = spline->GetComponentTransform().InverseTransformPosition(tether->tetherOrigin->GetComponentLocation());
-			FVector directionNormalized = (endPosition - startPosition);
-			directionNormalized.Normalize();
-			
-			spline->SetStartPosition(startPosition);
-			spline->SetStartScale(FVector2d(.1f, .1f));
-			spline->SetStartTangent(directionNormalized * 100);
-			
-			spline->SetEndPosition(endPosition);
-			spline->SetEndScale(FVector2d(.1f, .1f));
-			spline->SetEndTangent(directionNormalized * 100);
-			
-			FTetherConnection* newConnection = new FTetherConnection();
-			newConnection->Spline = spline;
-			newConnection->Tether = tether;
-
-			connections.Add(*newConnection);
-			/*
-			*/
+		if(!IsValid(finalTether))
+		{
+			finalTether = tether;
+			continue;
 		}
 		else
 		{
+			double currentDistance = FVector::Distance(GetActorLocation(), finalTether->GetActorLocation());
+			double newDistance = FVector::Distance(GetActorLocation(), tether->GetActorLocation());
 
+			if(currentDistance > newDistance)
+			{
+				finalTether = tether;
+			}
 		}
 	}
+
+	if(IsValid(finalTether))
+	{
+		if (!IsValid(finalTether->parent))
+		{
+			ConnectTether(finalTether);
+		}
+		else
+		{
+			// This may cause problems if (this) already has a parent
+			finalTether->ConnectTether(this);
+		}
+	}
+}
+
+void ATether::ConnectTether(ATether* newChild)
+{
+	tethers.Add(newChild);
+	newChild->parent = this;
+
+	UActorComponent* splineComponent = AddComponentByClass(USplineMeshComponent::StaticClass(), false, root->GetRelativeTransform(), true);
+	FinishAndRegisterComponent(splineComponent);
+	USplineMeshComponent* spline = Cast<USplineMeshComponent>(splineComponent);
+
+	spline->SetMobility(EComponentMobility::Type::Movable);
+	spline->AttachToComponent(root, FAttachmentTransformRules::KeepRelativeTransform);
+	spline->SetRelativeLocation(FVector(0, 0, 0));
+			
+	spline->SetStaticMesh(tetherMesh);
+	spline->SetMaterial(0, tetherMaterial);
+
+	FVector startPosition = tetherOrigin->GetRelativeLocation();
+	FVector endPosition = spline->GetComponentTransform().InverseTransformPosition(newChild->tetherOrigin->GetComponentLocation());
+	FVector directionNormalized = (endPosition - startPosition);
+	directionNormalized.Normalize();
+			
+	spline->SetStartPosition(startPosition);
+	spline->SetStartScale(FVector2d(.1f, .1f));
+	spline->SetStartTangent(directionNormalized * 100);
+			
+	spline->SetEndPosition(endPosition);
+	spline->SetEndScale(FVector2d(.1f, .1f));
+	spline->SetEndTangent(directionNormalized * 100);
+			
+	FTetherConnection* newConnection = new FTetherConnection();
+	newConnection->Spline = spline;
+	newConnection->Tether = newChild;
+
+	connections.Add(*newConnection);
 }
 
 // Called every frame
